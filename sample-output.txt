@@ -1,3 +1,4 @@
+// Will take away later
 Teller 0 []: ready to serve
 Teller 0 []: waiting for a customer
 Teller 1 []: ready to serve
