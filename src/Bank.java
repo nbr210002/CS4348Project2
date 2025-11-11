@@ -1,7 +1,6 @@
 import java.util.concurrent.Semaphore;
-import java.util.Random;
 
-public class bank
+public class Bank
 {
     public static final int NUM_TELLERS = 3;
 
@@ -15,7 +14,7 @@ public class bank
     public static Semaphore availableTellers = new Semaphore(NUM_TELLERS, true);
 
     public static Account sharedAccount = new Account(100);
-    public static Teller[] teller = new Teller[NUM_TELLERS];
+    public static Teller[] tellers = new Teller[NUM_TELLERS];
 
     public void openBank()
     {
@@ -24,8 +23,8 @@ public class bank
         // Start teller threads
         for (int i = 0; i < NUM_TELLERS; i++)
         {
-            teller[i] = new Teller(i);
-            teller[i].start();
+            tellers[i] = new Teller(i);
+            tellers[i].start();
         }
 
         // Start customer threads
@@ -33,5 +32,11 @@ public class bank
         {
             new Customer(i).start();
         }
+    }
+
+    public static void main(String[] args)
+    {
+        Bank a = new Bank();
+        a.openBank();
     }
 }
