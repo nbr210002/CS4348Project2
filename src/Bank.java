@@ -1,3 +1,4 @@
+import java.util.Random;
 import java.util.concurrent.Semaphore;
 
 public class Bank
@@ -40,4 +41,4 @@ public class Bank
         a.openBank();
     }
 }
-//
+

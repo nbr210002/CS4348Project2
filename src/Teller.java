@@ -4,11 +4,24 @@ import java.util.concurrent.Semaphore;
 public class Teller extends Thread
 {
     private int id;
+    private boolean busy = false;
     private static final Random rand = new Random();
 
     public Teller(int id)
     {
         this.id = id;
+    }
+
+    // Check if teller is available
+    public synchronized boolean isFree()
+    {
+        return !busy;
+    }
+
+    // Show if teller is busy or free
+    public synchronized void setBusy(boolean value)
+    {
+        busy = value;
     }
 
     @Override
@@ -53,7 +66,5 @@ public class Teller extends Thread
         //Free teller/completed
         Bank.safe.release();
         System.out.println("Teller " + id + " [Customer " + customer.getID() + "] transaction is complete");
-        Bank.availableTellers.release();
     }
 }
-//
