@@ -4,13 +4,16 @@ import java.util.concurrent.Semaphore;
 public class Customer extends Thread
 {
     private int id;
+
     private static final Random rand = new Random();
 
+    // Assigns id to customer
     public Customer(int id)
     {
         this.id = id;
     }
 
+    // Return customers id
     public int getID()
     {
         return id;
@@ -21,53 +24,51 @@ public class Customer extends Thread
     {
         try
         {
-            // Wait before entering the bank
-            Thread.sleep(rand.nextInt(100));
+            // Deside transaction type
+            String helper = rand.nextBoolean() ? "Deposit" : "Withdraw";
 
-            // Enter the bank
+            // Wait time
+            Thread.sleep(rand.nextInt(101));
+
+            // Customer enters bank
             Bank.bankDoor.acquire();
-            System.out.println("Customer " + id + " enters the bank.");
+            System.out.println("Customer " + id + ": enters the bank.");
 
-            // Wait for teller
-            Bank.availableTellers.acquire();
+            // Customer get in line to wait for teller
+            Bank.customerQueue.put(id);
+            System.out.println("Customer " + id + ": gets in line.");
 
-            Teller assignedTeller = null;
+            // Customer waits to be called
+            Bank.customerCalled[id].acquire();
 
-            // Find a free teller
-            synchronized (Bank.tellers)
-            {
-                for (Teller t : Bank.tellers)
-                {
-                    if (t.isFree())
-                    {
-                        assignedTeller = t;
-                        t.setBusy(true);
-                        break;
-                    }
-                }
-            }
+            // Teller and customer assigned to each other
+            int assignedTellerID = Bank.tellerForCustomer[id];
+            System.out.println("Customer " + id + " [Teller " + assignedTellerID + "]: selects teller");
 
-            // Random deposit/withdrawl
-            String transactionType = rand.nextBoolean() ? "Deposit" : "Withdraw";
+            // Teller gets signal that customer has arrived
+            Bank.customerArrived[assignedTellerID].release();
+            System.out.println("Customer " + id + " [Teller " + assignedTellerID + "]: introduces themselves.");
 
-            // Transaction
-            assignedTeller.transaction(this, transactionType);
+            // Teller asks for transaction
+            Bank.tellerAsked[assignedTellerID].acquire();
 
-            // Teller is free again; avoid deadlock
-            assignedTeller.setBusy(false);
+            // Teller receives transaction type
+            TellerData.setTransactionForTeller(assignedTellerID, helper);
+            System.out.println("Customer " + id + " [Teller " + assignedTellerID + "]: tells transaction " + helper);
+            Bank.transactionSaid[assignedTellerID].release();
 
-            // Release teller permit
-            Bank.availableTellers.release();
+            // Teller completes transaction
+            Bank.transactionDone[assignedTellerID].acquire();
+            System.out.println("Customer " + id + " [Teller " + assignedTellerID + "]: transaction complete.");
 
-            //Customer exits and releases spot
-            System.out.println("Customer " + id + " leaves the bank.");
+            // Customer leaves the bank
+            Bank.customerLeaves[assignedTellerID].release();
             Bank.bankDoor.release();
         }
 
         catch (InterruptedException e)
         {
-            e.printStackTrace();
+            Thread.currentThread().interrupt(); // reset interrupted status if thread is interrupted
         }
     }
 }
-//
